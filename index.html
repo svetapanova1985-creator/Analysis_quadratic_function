@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Інтерактивний тренажер: Дослідження функції руху м'яча</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #eef2ff;
+      --success: #10b981;
+      --success-bg: #ecfdf5;
+      --danger: #ef4444;
+      --danger-bg: #fef2f2;
+      --warning: #f59e0b;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .wrapper {
+      max-width: 1140px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Верхня панель */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: var(--card-bg);
+      padding: 16px 20px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .header-title h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .header-title p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .author-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border: 1px solid #c7d2fe;
+    }
+
+    /* Навігація по етапах */
+    .stepper {
+      display: flex;
+      background: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 6px;
+      gap: 6px;
+      overflow-x: auto;
+    }
+
+    .step-tab {
+      flex: 1;
+      min-width: 160px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .step-tab.active {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .step-tab.completed {
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.08);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+    }
+
+    .step-tab.active .step-num {
+      background: rgba(255,255,255,0.25);
+      color: #fff;
+    }
+
+    /* Головна сітка */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Формула та легенда */
+    .formula-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .math-formula {
+      display: inline-flex;
+      align-items: center;
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+
+    .legend {
+      display: flex;
+      gap: 10px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot-ball { background: var(--success); }
+    .dot-point { background: var(--warning); }
+    .dot-graph { background: var(--primary); }
+
+    /* Canvas */
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      height: 310px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Панель керування симуляцією */
+    .sim-controls {
+      background: #f1f5f9;
+      padding: 12px 14px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sim-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .sim-readout {
+      font-size: 0.92rem;
+      font-weight: 500;
+    }
+
+    .sim-readout b {
+      color: var(--primary);
+      font-family: monospace;
+      font-size: 1rem;
+    }
+
+    .sim-btn-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .ctrl-btn {
+      background: #ffffff;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .ctrl-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    /* Таблиця значень */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin: 10px 0;
+    }
+
+    table.values-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      font-size: 0.92rem;
+    }
+
+    table.values-table th, table.values-table td {
+      padding: 8px;
+      border: 1px solid var(--border);
+    }
+
+    table.values-table th {
+      background: #f8fafc;
+      font-weight: 600;
+    }
+
+    .tbl-inp {
+      width: 55px;
+      padding: 6px;
+      text-align: center;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-size: 0.95rem;
+      font-weight: 700;
+      outline: none;
+    }
+
+    .tbl-inp.correct {
+      border-color: var(--success);
+      background: var(--success-bg);
+      color: #065f46;
+    }
+
+    .tbl-inp.incorrect {
+      border-color: var(--danger);
+      background: var(--danger-bg);
+      color: #991b1b;
+    }
+
+    /* Завдання етапу 2 */
+    .tasks-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 480px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .task-card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      background: #ffffff;
+      transition: border-color 0.2s;
+    }
+
+    .task-card.correct {
+      border-color: var(--success);
+      background: var(--success-bg);
+    }
+
+    .task-card.incorrect {
+      border-color: var(--danger);
+      background: var(--danger-bg);
+    }
+
+    .task-label {
+      font-weight: 600;
+      font-size: 0.88rem;
+      margin-bottom: 8px;
+      line-height: 1.35;
+    }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    select, input[type="number"], input[type="text"] {
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.88rem;
+      outline: none;
+      background: #ffffff;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--primary);
+    }
+
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: #f1f5f9;
+      color: var(--text);
+    }
+
+    .feedback-msg {
+      font-size: 0.82rem;
+      margin-top: 6px;
+      line-height: 1.35;
+    }
+
+    .feedback-msg.correct { color: #065f46; font-weight: 500; }
+    .feedback-msg.incorrect { color: #991b1b; }
+
+    .summary-box {
+      background: var(--success-bg);
+      border: 1px solid #a7f3d0;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .summary-box h3 {
+      color: #065f46;
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+
+    .summary-list {
+      list-style-type: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.88rem;
+      color: #047857;
+    }
+
+    .footer-bar {
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      padding: 8px 0;
+    }
+
+    /* Математичний курсив */
+    .m-var {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+  <!-- Верхній хедер -->
+  <header class="header-bar">
+    <div class="header-title">
+      <h1>Дослідження квадратичної функції <span class="m-var">s</span>(<span class="m-var">t</span>) = 8<span class="m-var">t</span> − 4<span class="m-var">t</span>²</h1>
+      <p>Таблиця значень → Побудова графіка → Дослідження властивостей → Симуляція</p>
+    </div>
+    <div class="author-badge">
+      ✍️ Панова С.О&AI
+    </div>
+  </header>
+
+  <!-- Перемикач етапів -->
+  <nav class="stepper">
+    <button class="step-tab active" id="tab1" onclick="switchStep(1)">
+      <span class="step-num">1</span>
+      <span>Таблиця і Графік</span>
+    </button>
+    <button class="step-tab" id="tab2" onclick="switchStep(2)">
+      <span class="step-num">2</span>
+      <span>Властивості функції</span>
+    </button>
+    <button class="step-tab" id="tab3" onclick="switchStep(3)">
+      <span class="step-num">3</span>
+      <span>Анімація польоту</span>
+    </button>
+  </nav>
+
+  <!-- Головний блок -->
+  <div class="main-grid">
+    
+    <!-- Ліва частина: Графік + Симулятор -->
+    <div class="card">
+      <div class="formula-row">
+        <div class="math-formula">
+          <i>s</i>(<i>t</i>) = 8<i>t</i> − 4<i>t</i><sup>2</sup> &nbsp;(<i>t</i> ≥ 0)
+        </div>
+        <div class="legend">
+          <span class="legend-item"><span class="dot dot-ball"></span> М'яч</span>
+          <span class="legend-item"><span class="dot dot-point"></span> Точки</span>
+          <span class="legend-item"><span class="dot dot-graph"></span> Траєкторія</span>
+        </div>
+      </div>
+
+      <div class="canvas-container">
+        <canvas id="simCanvas"></canvas>
+      </div>
+
+      <!-- Інтерактивне керування симуляцією -->
+      <div class="sim-controls">
+        <div class="sim-top-row">
+          <div class="sim-readout">
+            Час <span class="m-var">t</span>: <b><span id="timeVal">0.00</span> с</b> &nbsp;|&nbsp;
+            Висота <span class="m-var">s</span>: <b><span id="heightVal">0.00</span> м</b>
+          </div>
+          <div class="sim-btn-group">
+            <button class="ctrl-btn" id="playBtn" onclick="togglePlay()">▶ Запуск</button>
+            <button class="ctrl-btn" onclick="resetSim()">↺ Початок</button>
+          </div>
+        </div>
+        <input type="range" id="timeSlider" min="0" max="2" step="0.01" value="0">
+      </div>
+    </div>
+
+    <!-- Права частина: Завдання -->
+    <div class="card">
+
+      <!-- ЕТАП 1: Таблиця значень -->
+      <div id="step1-content">
+        <h2 style="font-size: 1.05rem; margin-bottom: 6px;">Етап 1. Заповнення таблиці та побудова графіка</h2>
+        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 12px;">
+          Обчисліть висоту <span class="m-var">s</span>(<span class="m-var">t</span>) для кожного моменту часу <span class="m-var">t</span> за формулою 
+          <b><span class="m-var">s</span>(<span class="m-var">t</span>) = 8<span class="m-var">t</span> − 4<span class="m-var">t</span>²</b>:
+        </p>
+
+        <div class="table-container">
+          <table class="values-table">
+            <thead>
+              <tr>
+                <th><span class="m-var">t</span> (с)</th>
+                <th>0</th>
+                <th>0.5</th>
+                <th>1.0</th>
+                <th>1.5</th>
+                <th>2.0</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight: 600;"><span class="m-var">s</span> (м)</td>
+                <td><input type="number" id="t0" class="tbl-inp" step="0.5" placeholder="?"></td>
+                <td><input type="number" id="t05" class="tbl-inp" step="0.5" placeholder="?"></td>
+                <td><input type="number" id="t1" class="tbl-inp" step="0.5" placeholder="?"></td>
+                <td><input type="number" id="t15" class="tbl-inp" step="0.5" placeholder="?"></td>
+                <td><input type="number" id="t2" class="tbl-inp" step="0.5" placeholder="?"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="tableMsg" class="feedback-msg"></div>
+
+        <div style="display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap;">
+          <button class="btn" onclick="checkTable()">Перевірити та побудувати графік</button>
+          <button class="btn btn-secondary" onclick="autoFillTable()">Заповнити авто</button>
+        </div>
+      </div>
+
+      <!-- ЕТАП 2: Дослідження властивостей -->
+      <div id="step2-content" style="display: none;">
+        <h2 style="font-size: 1.05rem; margin-bottom: 6px;">Етап 2. Дослідження властивостей функції</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">
+          Визначте математичні та фізичні характеристики руху за графіком:
+        </p>
+
+        <div class="tasks-container">
+          
+          <!-- D(s) -->
+          <div class="task-card" id="card_d">
+            <div class="task-label">1. Область визначення <span class="m-var">D</span>(<span class="m-var">s</span>) (час руху):</div>
+            <div class="input-row">
+              <select id="ans_d">
+                <option value="">Оберіть проміжок...</option>
+                <option value="0_2">[0; 2]</option>
+                <option value="0_inf">[0; +∞)</option>
+                <option value="all">(−∞; +∞)</option>
+              </select>
+            </div>
+            <div class="feedback-msg" id="fb_d"></div>
+          </div>
+
+          <!-- E(s) -->
+          <div class="task-card" id="card_e">
+            <div class="task-label">2. Область значень <span class="m-var">E</span>(<span class="m-var">s</span>) (діапазон висоти):</div>
+            <div class="input-row">
+              <select id="ans_e">
+                <option value="">Оберіть проміжок...</option>
+                <option value="0_4">[0; 4]</option>
+                <option value="0_8">[0; 8]</option>
+                <option value="0_2">[0; 2]</option>
+              </select>
+            </div>
+            <div class="feedback-msg" id="fb_e"></div>
+          </div>
+
+          <!-- Нулі -->
+          <div class="task-card" id="card_zeros">
+            <div class="task-label">3. Нулі функції (<span class="m-var">s</span> = 0, м'яч на землі):</div>
+            <div class="input-row">
+              <span><span class="m-var">t</span>₁ =</span>
+              <input type="number" id="ans_z1" style="width:65px;" placeholder="0">
+              <span>та <span class="m-var">t</span>₂ =</span>
+              <input type="number" id="ans_z2" style="width:65px;" placeholder="2">
+            </div>
+            <div class="feedback-msg" id="fb_zeros"></div>
+          </div>
+
+          <!-- Монотонність -->
+          <div class="task-card" id="card_mono">
+            <div class="task-label">4. Проміжки зростання та спадання:</div>
+            <div class="input-row">
+              <select id="ans_mono">
+                <option value="">Оберіть відповідь...</option>
+                <option value="ok">Зростає на [0; 1], спадає на [1; 2]</option>
+                <option value="inv">Спадає на [0; 1], зростає на [1; 2]</option>
+                <option value="all">Зростає на [0; 2]</option>
+              </select>
+            </div>
+            <div class="feedback-msg" id="fb_mono"></div>
+          </div>
+
+          <!-- Екстремуми -->
+          <div class="task-card" id="card_ext">
+            <div class="task-label">5. Найбільше та найменше значення висоти:</div>
+            <div class="input-row">
+              <span>max <span class="m-var">s</span> =</span>
+              <input type="number" id="ans_max" style="width:65px;" placeholder="max">
+              <span>min <span class="m-var">s</span> =</span>
+              <input type="number" id="ans_min" style="width:65px;" placeholder="min">
+            </div>
+            <div class="feedback-msg" id="fb_ext"></div>
+          </div>
+
+          <!-- Знакосталість -->
+          <div class="task-card" id="card_sign">
+            <div class="task-label">6. Проміжок знакосталості (<span class="m-var">s</span> &gt; 0, м'яч у повітрі):</div>
+            <div class="input-row">
+              <select id="ans_sign">
+                <option value="">Оберіть інтервал...</option>
+                <option value="0_2">(0; 2)</option>
+                <option value="0_2_sq">[0; 2]</option>
+                <option value="0_1">(0; 1)</option>
+              </select>
+            </div>
+            <div class="feedback-msg" id="fb_sign"></div>
+          </div>
+
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <button class="btn" onclick="checkProperties()">Перевірити властивості</button>
+        </div>
+      </div>
+
+      <!-- ЕТАП 3: Підсумок -->
+      <div id="step3-content" style="display: none;">
+        <h2 style="font-size: 1.05rem; margin-bottom: 8px;">Етап 3. Результати дослідження</h2>
+        <div class="summary-box">
+          <h3>🌟 Повний паспорт функції s(t) = 8t − 4t²:</h3>
+          <ul class="summary-list">
+            <li>• <b>Область визначення D(s):</b> <span class="m-var">t</span> ∈ [0; 2] с</li>
+            <li>• <b>Область значень E(s):</b> <span class="m-var">s</span> ∈ [0; 4] м</li>
+            <li>• <b>Нулі функції:</b> <span class="m-var">t</span>₁ = 0 с (кидок), <span class="m-var">t</span>₂ = 2 с (падіння)</li>
+            <li>• <b>Зростання (підйом):</b> на проміжку [0; 1] с</li>
+            <li>• <b>Спадання (опускання):</b> на проміжку [1; 2] с</li>
+            <li>• <b>Найбільша висота (вершина):</b> max <span class="m-var">s</span> = 4 м при <span class="m-var">t</span> = 1 с</li>
+            <li>• <b>Найменша висота:</b> min <span class="m-var">s</span> = 0 м при <span class="m-var">t</span> = 0 с та <span class="m-var">t</span> = 2 с</li>
+            <li>• <b>М'яч у повітрі (s &gt; 0):</b> інтервал <span class="m-var">t</span> ∈ (0; 2) с</li>
+          </ul>
+        </div>
+        <div style="margin-top: 16px;">
+          <button class="btn btn-secondary" onclick="resetAll()">Скинути та почати спочатку</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <footer class="footer-bar">
+    Навчальний інтерактивний симулятор з алгебри • Авторство: <b>Панова С.О&AI</b>
+  </footer>
+</div>
+
+<script>
+  let isGraphDrawn = false;
+  let userPoints = [];
+  let isPlaying = false;
+  let animId = null;
+
+  const canvas = document.getElementById('simCanvas');
+  const ctx = canvas.getContext('2d');
+  const slider = document.getElementById('timeSlider');
+  const timeVal = document.getElementById('timeVal');
+  const heightVal = document.getElementById('heightVal');
+  const playBtn = document.getElementById('playBtn');
+
+  function s(t) {
+    return 8 * t - 4 * t * t;
+  }
+
+  function resizeCanvas() {
+    if (!canvas.parentElement) return;
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight;
+    render();
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+
+  function switchStep(stepNum) {
+    for (let i = 1; i <= 3; i++) {
+      const tab = document.getElementById('tab' + i);
+      const content = document.getElementById('step' + i + '-content');
+      if (i === stepNum) {
+        tab.classList.add('active');
+        content.style.display = 'block';
+      } else {
+        tab.classList.remove('active');
+        content.style.display = 'none';
+      }
+    }
+    render();
+  }
+
+  function render() {
+    const w = canvas.width;
+    const h = canvas.height;
+    if (w === 0 || h === 0) return;
+
+    ctx.clearRect(0, 0, w, h);
+
+    const padLeft = 65;
+    const padRight = 30;
+    const padTop = 30;
+    const padBottom = 40;
+
+    const graphW = w - padLeft - padRight;
+    const graphH = h - padTop - padBottom;
+
+    const maxT = 2.2;
+    const maxS = 4.8;
+
+    const mapX = (t) => padLeft + (t / maxT) * graphW;
+    const mapY = (val) => h - padBottom - (val / maxS) * graphH;
+
+    // 1. Сітка
+    ctx.strokeStyle = '#f1f5f9';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let tStep = 0.5; tStep <= 2; tStep += 0.5) {
+      let x = mapX(tStep);
+      ctx.moveTo(x, padTop);
+      ctx.lineTo(x, h - padBottom);
+    }
+    for (let sStep = 1; sStep <= 4; sStep += 1) {
+      let y = mapY(sStep);
+      ctx.moveTo(padLeft, y);
+      ctx.lineTo(w - padRight, y);
+    }
+    ctx.stroke();
+
+    // 2. Осі координат
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(padLeft, padTop);
+    ctx.lineTo(padLeft, h - padBottom);
+    ctx.lineTo(w - padRight, h - padBottom);
+    ctx.stroke();
+
+    // Стрілки
+    ctx.fillStyle = '#94a3b8';
+    ctx.beginPath();
+    ctx.moveTo(padLeft, padTop);
+    ctx.lineTo(padLeft - 4, padTop + 8);
+    ctx.lineTo(padLeft + 4, padTop + 8);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(w - padRight, h - padBottom);
+    ctx.lineTo(w - padRight - 8, h - padBottom - 4);
+    ctx.lineTo(w - padRight - 8, h - padBottom + 4);
+    ctx.fill();
+
+    // Підписи осей
+    ctx.fillStyle = '#64748b';
+    ctx.font = 'italic 12px Georgia, serif';
+    ctx.fillText('s (м)', padLeft - 12, padTop - 10);
+    ctx.fillText('t (c)', w - padRight + 2, h - padBottom + 16);
+
+    // Числа на осях
+    ctx.font = '11px -apple-system, sans-serif';
+    for (let tStep = 0; tStep <= 2; tStep += 0.5) {
+      ctx.fillText(tStep.toString(), mapX(tStep) - 6, h - padBottom + 16);
+    }
+    for (let sStep = 1; sStep <= 4; sStep += 1) {
+      ctx.fillText(sStep.toString(), padLeft - 18, mapY(sStep) + 4);
+    }
+
+    // 3. Точки таблиці
+    userPoints.forEach(pt => {
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(mapX(pt.t), mapY(pt.s), 5.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#b45309';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+
+    // 4. Траєкторія s(t)
+    if (isGraphDrawn) {
+      ctx.strokeStyle = '#4f46e5';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      for (let tCur = 0; tCur <= 2.001; tCur += 0.02) {
+        let x = mapX(tCur);
+        let y = mapY(s(tCur));
+        if (tCur === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Проекція вершини
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(mapX(1), h - padBottom);
+      ctx.lineTo(mapX(1), mapY(4));
+      ctx.lineTo(padLeft, mapY(4));
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // 5. Фізична вертикальна лінія польоту м'яча
+    const ballLineX = 24;
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(ballLineX, mapY(0));
+    ctx.lineTo(ballLineX, mapY(4.2));
+    ctx.stroke();
+
+    // Розрахунок поточного часу та висоти
+    const curT = parseFloat(slider.value);
+    const curS = Math.max(0, s(curT));
+
+    timeVal.textContent = curT.toFixed(2);
+    heightVal.textContent = curS.toFixed(2);
+
+    // Точка на графіку
+    if (isGraphDrawn) {
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(mapX(curT), mapY(curS), 5.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // М'яч на вертикалі
+    ctx.fillStyle = '#10b981';
+    ctx.beginPath();
+    ctx.arc(ballLineX, mapY(curS), 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#059669';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // Обробка повзунка
+  slider.addEventListener('input', () => {
+    if (isPlaying) togglePlay();
+    render();
+  });
+
+  // Анімація симулятора
+  function togglePlay() {
+    if (isPlaying) {
+      isPlaying = false;
+      playBtn.textContent = '▶ Запуск';
+      if (animId) cancelAnimationFrame(animId);
+    } else {
+      if (parseFloat(slider.value) >= 2) {
+        slider.value = 0;
+      }
+      isPlaying = true;
+      playBtn.textContent = '⏸ Пауза';
+      let lastTime = performance.now();
+
+      function step(now) {
+        if (!isPlaying) return;
+        const dt = (now - lastTime) / 1000;
+        lastTime = now;
+
+        let val = parseFloat(slider.value) + dt * 0.75; // швидкість анімації
+        if (val >= 2) {
+          val = 2;
+          slider.value = val;
+          render();
+          togglePlay();
+          return;
+        }
+        slider.value = val;
+        render();
+        animId = requestAnimationFrame(step);
+      }
+      animId = requestAnimationFrame(step);
+    }
+  }
+
+  function resetSim() {
+    if (isPlaying) togglePlay();
+    slider.value = 0;
+    render();
+  }
+
+  // Перевірка таблиці (Етап 1)
+  const answersTable = { t0: 0, t05: 3, t1: 4, t15: 3, t2: 0 };
+
+  function checkTable() {
+    let allOk = true;
+    userPoints = [];
+
+    const pairs = [
+      { id: 't0', t: 0 },
+      { id: 't05', t: 0.5 },
+      { id: 't1', t: 1.0 },
+      { id: 't15', t: 1.5 },
+      { id: 't2', t: 2.0 }
+    ];
+
+    pairs.forEach(p => {
+      const inp = document.getElementById(p.id);
+      const val = parseFloat(inp.value);
+      const expected = answersTable[p.id];
+
+      if (!isNaN(val) && Math.abs(val - expected) < 0.01) {
+        inp.className = 'tbl-inp correct';
+        userPoints.push({ t: p.t, s: expected });
+      } else {
+        inp.className = 'tbl-inp incorrect';
+        allOk = false;
+      }
+    });
+
+    const msg = document.getElementById('tableMsg');
+    if (allOk) {
+      isGraphDrawn = true;
+      msg.className = 'feedback-msg correct';
+      msg.innerHTML = '🎉 <b>Чудово!</b> Усі значення обчислено правильно. Графік побудовано. Переходьте до Етапу 2.';
+      document.getElementById('tab1').classList.add('completed');
+    } else {
+      isGraphDrawn = false;
+      msg.className = 'feedback-msg incorrect';
+      msg.innerHTML = '⚠️ Є помилки в обчисленнях. Підказка: підставте <i>t</i> у формулу 8<i>t</i> − 4<i>t</i>².';
+    }
+    render();
+  }
+
+  function autoFillTable() {
+    document.getElementById('t0').value = 0;
+    document.getElementById('t05').value = 3;
+    document.getElementById('t1').value = 4;
+    document.getElementById('t15').value = 3;
+    document.getElementById('t2').value = 0;
+    checkTable();
+  }
+
+  // Перевірка властивостей (Етап 2)
+  function setCardFeedback(cardId, fbId, isCorrect, text) {
+    const card = document.getElementById(cardId);
+    const fb = document.getElementById(fbId);
+    card.className = 'task-card ' + (isCorrect ? 'correct' : 'incorrect');
+    fb.className = 'feedback-msg ' + (isCorrect ? 'correct' : 'incorrect');
+    fb.innerHTML = text;
+  }
+
+  function checkProperties() {
+    let score = 0;
+
+    // 1. D(s)
+    if (document.getElementById('ans_d').value === '0_2') {
+      setCardFeedback('card_d', 'fb_d', true, '✅ Вірно! Тривалість руху від 0 до 2 с.');
+      score++;
+    } else {
+      setCardFeedback('card_d', 'fb_d', false, '❌ Помилка. М\'яч летить від <i>t</i> = 0 до <i>t</i> = 2, отже [0; 2].');
+    }
+
+    // 2. E(s)
+    if (document.getElementById('ans_e').value === '0_4') {
+      setCardFeedback('card_e', 'fb_e', true, '✅ Вірно! Висота від 0 м (земля) до 4 м (вершина).');
+      score++;
+    } else {
+      setCardFeedback('card_e', 'fb_e', false, '❌ Помилка. Діапазон висоти — [0; 4] м.');
+    }
+
+    // 3. Нулі
+    const z1 = parseFloat(document.getElementById('ans_z1').value);
+    const z2 = parseFloat(document.getElementById('ans_z2').value);
+    if ((z1 === 0 && z2 === 2) || (z1 === 2 && z2 === 0)) {
+      setCardFeedback('card_zeros', 'fb_zeros', true, '✅ Вірно! <i>t</i>₁ = 0 с (старт), <i>t</i>₂ = 2 с (падіння).');
+      score++;
+    } else {
+      setCardFeedback('card_zeros', 'fb_zeros', false, '❌ Помилка. Розв\'яжіть 8<i>t</i> − 4<i>t</i>² = 0 ⟹ <i>t</i> = 0 або <i>t</i> = 2.');
+    }
+
+    // 4. Монотонність
+    if (document.getElementById('ans_mono').value === 'ok') {
+      setCardFeedback('card_mono', 'fb_mono', true, '✅ Вірно! Підйом на [0; 1], падіння на [1; 2].');
+      score++;
+    } else {
+      setCardFeedback('card_mono', 'fb_mono', false, '❌ Помилка. Від 0 до 1 м\'яч піднімається, після 1 — опускається.');
+    }
+
+    // 5. Екстремуми
+    const maxVal = parseFloat(document.getElementById('ans_max').value);
+    const minVal = parseFloat(document.getElementById('ans_min').value);
+    if (maxVal === 4 && minVal === 0) {
+      setCardFeedback('card_ext', 'fb_ext', true, '✅ Вірно! max <i>s</i> = 4 м, min <i>s</i> = 0 м.');
+      score++;
+    } else {
+      setCardFeedback('card_ext', 'fb_ext', false, '❌ Помилка. Вершина дає максимум (4 м), земля — мінімум (0 м).');
+    }
+
+    // 6. Знакосталість
+    if (document.getElementById('ans_sign').value === '0_2') {
+      setCardFeedback('card_sign', 'fb_sign', true, '✅ Вірно! М\'яч у повітрі (<i>s</i> &gt; 0) при <i>t</i> ∈ (0; 2).');
+      score++;
+    } else {
+      setCardFeedback('card_sign', 'fb_sign', false, '❌ Помилка. В точках 0 і 2 висота дорівнює нулю, тому дужки круглі: (0; 2).');
+    }
+
+    if (score === 6) {
+      document.getElementById('tab2').classList.add('completed');
+      setTimeout(() => switchStep(3), 800);
+    }
+  }
+
+  function resetAll() {
+    if (isPlaying) togglePlay();
+    ['t0', 't05', 't1', 't15', 't2'].forEach(id => {
+      const el = document.getElementById(id);
+      el.value = '';
+      el.className = 'tbl-inp';
+    });
+    document.getElementById('tableMsg').innerHTML = '';
+
+    ['ans_d', 'ans_e', 'ans_mono', 'ans_sign'].forEach(id => document.getElementById(id).value = '');
+    ['ans_z1', 'ans_z2', 'ans_max', 'ans_min'].forEach(id => document.getElementById(id).value = '');
+
+    ['card_d', 'card_e', 'card_zeros', 'card_mono', 'card_ext', 'card_sign'].forEach(id => {
+      document.getElementById(id).className = 'task-card';
+    });
+    ['fb_d', 'fb_e', 'fb_zeros', 'fb_mono', 'fb_ext', 'fb_sign'].forEach(id => {
+      document.getElementById(id).innerHTML = '';
+    });
+
+    ['tab1', 'tab2', 'tab3'].forEach(id => document.getElementById(id).classList.remove('completed'));
+
+    isGraphDrawn = false;
+    userPoints = [];
+    slider.value = 0;
+    switchStep(1);
+    render();
+  }
+
+  // Запуск при завантаженні сторінки
+  window.onload = function() {
+    resizeCanvas();
+  };
+</script>
+
+</body>
+</html>
